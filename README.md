@@ -23,10 +23,10 @@
 ### Figures & tables
 | File | Produced materials |
 | :--- | :--- |
-| `figures/fig_ews_all_kc.jl` | EWSs for three representative networks under full observation (S1) (Figure 1).|
-| `figures/fig_ews_sentinel.jl` | EWSs for three representative networks under partial observation (S2-S6) (Figure 2).|
-| `figures/fig_ews_all_kc_appendix.jl` | EWSs for the other six networks under full observation (S1) (Figure 3).|
-| `figures/fig_ews_sentinel_appendix.jl` | EWSs for the other six networks under partial observation (S2-S6) (Figure 4).|
+| `figures/fig_ews_all_kc.jl` | EWSs for three representative networks under full observation (S1) (Figure 2).|
+| `figures/fig_ews_sentinel.jl` | EWSs for three representative networks under partial observation (S2-S6) (Figure 3).|
+| `figures/fig_ews_all_kc_appendix.jl` | EWSs for the other six networks under full observation (S1) (Figure 4).|
+| `figures/fig_ews_sentinel_appendix.jl` | EWSs for the other six networks under partial observation (S2-S6) (Figure 5).|
 | `tables/table1_networks_and_Kc.jl` | Summary of networks and their critical coupling strengths (Table 1).|
 | `tables/table2_tau_comparison.jl` | Kendall's $\tau$ for each combination of EWSs and sentinel sets (Table 2).|
 | `tables/table3_tipmoc_detection.jl` | TIPMOC detection rates for each combination of EWSs and sentinel sets (Table 3).|
