@@ -1,0 +1,10 @@
+key	label	kind	N	E	kbar	Kc20_mean	Kc20_sd
+complete	complete	model	100	4950	99.0000	1.6080	0.0063
+erdos_renyi	ER	model	100	514	10.2800	1.5710	0.0837
+scale_free	scale-free	model	100	325	6.5000	1.4410	0.1751
+animal_18_1	Bat	empirical	43	546	25.3953	1.2560	0.1301
+highschool_boys	Highschool boy	empirical	70	274	7.8286	1.4450	0.1815
+animal_6	House finch	empirical	108	1026	19.0000	1.1640	0.1134
+surfersb	Surfer	empirical	43	336	15.6279	1.3460	0.1223
+hall	Hall	empirical	217	1839	16.9493	1.4680	0.1221
+jazz	Jazz	empirical	198	2742	27.6970	1.2260	0.1078

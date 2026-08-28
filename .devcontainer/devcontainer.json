@@ -1,0 +1,124 @@
+{
+    "name": "${localWorkspaceFolderBasename}",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": ".."
+    },
+    "forwardPorts": [
+        8888
+    ],
+    "remoteUser": "root",
+    "workspaceMount": "src=${localWorkspaceFolder},target=/workdir,type=bind",
+    "workspaceFolder": "/workdir",
+    "shutdownAction": "stopContainer",
+    "postCreateCommand": "bash .devcontainer/postCreateCommand.sh",
+    "containerEnv": {
+        "JULIA_PROJECT": "/workdir"
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "julialang.language-julia",
+                "0h7z.vscode-julia-format",
+                "ms-toolsai.jupyter",
+                "donjayamanne.vscode-jupytext",
+                "ms-python.isort",
+                "REditorSupport.r",
+                "RDebugger.r-debugger",
+                "ms-python.python",
+                "janisdd.vscode-edit-csv",
+                "mechatroner.rainbow-csv",
+                "James-Yu.latex-workshop",
+                "openai.chatgpt",
+                "anthropic.claude-code"
+            ],
+            "settings": {
+                "terminal.integrated.shell.linux": "/bin/bash",
+                "workbench.editorAssociations": {
+                    "*.ipynb": "jupyter-notebook"
+                },
+                "jupyter.allowLocalServer": true,
+                "jupyter.jupyterServerType": "local",
+                "python.linting.enabled": true,
+                "python.linting.lintOnSave": true,
+                "julia.autocomplete.enabled": true,
+                "python.languageServer": "Pylance",
+                "python.analysis.completeFunctionParens": true,
+
+                "latex-workshop.latex.tools": [
+                    {
+                        "name": "pdflatex",
+                        "command": "pdflatex",
+                        "args": [
+                            "-l",
+                            "-synctex=1",
+                            "-interaction=nonstopmode",
+                            "-halt-on-error",
+                            "-kanji=utf8",
+                            "%DOC%"
+                        ]
+                    },
+                    {
+                        "name": "bibtex",
+                        "command": "bibtex",
+                        "args": [
+                            "%DOCFILE%"
+                        ]
+                    }
+                ],
+                "latex-workshop.latex.recipes": [
+                    {
+                        "name": "pdflatex × 2",
+                        "tools": [
+                            "pdflatex",
+                            "pdflatex"
+                        ]
+                    },
+                    {
+                        "name": "pdflatex -> bibtex -> pdflatex × 2",
+                        "tools": [
+                            "pdflatex",
+                            "bibtex",
+                            "pdflatex",
+                            "pdflatex"
+                        ]
+                    }
+                ],
+                "latex-workshop.latex.recipe.default": "lastUsed",
+                "latex-workshop.latex.autoBuild.run": "onSave",
+                "latex-workshop.latex.autoBuild.interval": 0,
+                "latex-workshop.view.pdf.viewer": "tab",
+                "latex-workshop.synctex.afterBuild.enabled": true,
+                "latex-workshop.intellisense.unimathsymbols.enabled": true,
+                "latex-workshop.latex.autoClean.run": "onBuilt",
+                "latex-workshop.latex.clean.method": "glob",
+                "latex-workshop.latex.clean.fileTypes": [
+                    "*.aux",
+                    "*.bbl",
+                    "*.bcf",
+                    "*.blg",
+                    "*.idx",
+                    "*.ind",
+                    "*.lof",
+                    "*.log",
+                    "*.lot",
+                    "*.out",
+                    "*.toc",
+                    "*.acn",
+                    "*.acr",
+                    "*.alg",
+                    "*.glg",
+                    "*.glo",
+                    "*.gls",
+                    "*.ist",
+                    "*.fls",
+                    "*.fdb_latexmk",
+                    "_minted*",
+                    "*.nav",
+                    "*.snm",
+                    "*.vrb"
+                ]
+            }
+        }
+    }
+}

@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+code_check.ipynb
+tipmoc_lib/
+networks/nets/
+draft/
