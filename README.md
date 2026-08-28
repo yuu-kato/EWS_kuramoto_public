@@ -31,7 +31,7 @@
 | `tables/table2_tau_comparison.jl` | Kendall's $\tau$ for each combination of EWSs and sentinel sets (Table 2).|
 | `tables/table3_tipmoc_detection.jl` | TIPMOC detection rates for each combination of EWSs and sentinel sets (Table 3).|
 
-## Running the pipeline
-`run_pipeline.sh` runs every step below in order.
+### Running the pipeline
+`run_pipeline.sh` runs every step in order.
 
 **If you have any questions when running the codes, please contact Yusuke Kato.**
