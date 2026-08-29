@@ -43,6 +43,7 @@ const ROWS = [findfirst(m -> String(m.key) == k, B.meta) for k in KEYS]
 const NNET = length(ROWS)
 const ROWHEIGHT = 420
 const FIGSIZE = (2200, 80 + ROWHEIGHT * NNET)
+const ROWLABELSIZE = 44
 const PANELLABELSIZE = 40
 const TICKLABELSIZE = 32
 const SET_LABELS = ["S1", "S2", "S3", "S4", "S5", "S6"]   # legend needs only the short set names
