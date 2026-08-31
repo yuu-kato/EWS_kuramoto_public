@@ -1,6 +1,6 @@
 ### Simulation code for "Early warning signals for synchronization transitions from partial observations"
 
-> **Citation:** > Y. Kato and N. Masuda. (2026). *Early warning signals for synchronization transitions from partial observations*. [arXiv:26**.*****](https://arXiv.org/abs/26**.*****)
+> **Citation:** > Y. Kato and N. Masuda. (2026). *Early warning signals for synchronization transitions from partial observations*. [arXiv:2608.28320](https://arXiv.org/abs/2608.28320)
 
 - The simulation environment (Julia, Python, and R) and necessary packages can be reproduced by Docker. 
 - For the brief tutorial of Docker and Apptainer, see our previous GitHub repository: https://github.com/yuu-kato/EMC_kuramoto_2025. 
