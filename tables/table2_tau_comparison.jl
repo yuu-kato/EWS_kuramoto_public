@@ -6,7 +6,7 @@
 # (local order parameter R_S, collective Var_t R_S, microscopic), comparing
 # the main-text sentinel-set size n=floor(ln N) against the auxiliary
 # n=2*floor(ln N).
-# All six sets now come from the single cache/bundle_ews_Kc20[_mult2].jls
+# All six sets come from the single cache/bundle_ews_<tag>[_mult2].jls
 # bundle (simulate/01_ews_sentinel_sweep.jl) -- no second "hubfreq" bundle to
 # merge in, unlike the earlier two-script version of this pipeline; S4 (hub)
 # and S5 (periphery) are bundle columns 6 and 7, S6 (random) is column 8 --
@@ -18,12 +18,21 @@
 # -- i.e. every simulation is weighted equally regardless of which network it
 # came from (the per-network view is what Figs. 1/2 already show).
 #
-# Run (after simulate/01_ews_sentinel_sweep.jl, which writes both
-# bundle_ews_Kc20.jls and bundle_ews_Kc20_mult2.jls in one run):
-#   julia --project=. tables/table2_tau_comparison.jl
+# The optional argument selects the K_c-definition family written by
+# simulate/01_ews_sentinel_sweep.jl: Kc20 (default; the paper's threshold
+# fraction 0.2), or Kc10 / Kc30 (fractions 0.1 / 0.3, robustness checks of
+# the K_c definition). Kendall's tau is always evaluated over K_0 <= K <= K_c
+# of that family, and S2/S3 are selected at 0.9/0.5 of that K_c.
 #
-# Writes ../draft/table2_tau_comparison.tex (same directory as main.tex) --
-# just the table itself (\label + ruledtabular + tabular), no
+# Run (after simulate/01_ews_sentinel_sweep.jl with the matching fraction,
+# which writes both bundle_ews_<tag>.jls and bundle_ews_<tag>_mult2.jls in
+# one run):
+#   julia --project=. tables/table2_tau_comparison.jl          # Kc20 (paper)
+#   julia --project=. tables/table2_tau_comparison.jl Kc10
+#   julia --project=. tables/table2_tau_comparison.jl Kc30
+#
+# Writes ../draft/table2_tau_comparison[_Kc10|_Kc30].tex (same directory as
+# main.tex) -- just the table itself (\label + ruledtabular + tabular), no
 # \begin{table*}/\caption wrapper; \input this file inside that float.
 
 include(joinpath(@__DIR__, "..", "core", "kuramoto_core.jl"))
@@ -37,6 +46,8 @@ const SET_LABELS = ["S1", "S2", "S3", "S4", "S5", "S6"]
 const SIGNALS = [(:tau_RS, :RS, "\$\\langle R_S\\rangle_t\$"), (:tau_RSvar, :RSvar, "\$\\mathrm{Var}(R_S)\$"),
                   (:tau_micro, :micro, "\$V_S\$")]
 const MULTS = [1, 2]
+const KCTAG = length(ARGS) >= 1 ? ARGS[1] : "Kc20"   # bundle family to read: Kc10, Kc20, Kc30
+const KCSUF = KCTAG == "Kc20" ? "" : "_" * KCTAG
 
 """Bundle column (1..8, S1/S2-1/S2-2/S3-1/S3-2/S4/S5/S6 -- see
 simulate/01_ews_sentinel_sweep.jl's header note) for sentinel set `newset`
@@ -69,7 +80,7 @@ function pooled_mean_sd(B, fld, newset, signal)
     mean(vals), std(vals)
 end
 
-bundle(mult) = deserialize(joinpath(CACHE, mult == 1 ? "bundle_ews_Kc20.jls" : "bundle_ews_Kc20_mult$(mult).jls"))
+bundle(mult) = deserialize(joinpath(CACHE, mult == 1 ? "bundle_ews_$(KCTAG).jls" : "bundle_ews_$(KCTAG)_mult$(mult).jls"))
 B = Dict(mult => bundle(mult) for mult in MULTS)
 
 "Format a mean value, wrapping negative numbers in math mode so LaTeX
@@ -97,5 +108,5 @@ for (newset, label) in enumerate(SET_LABELS)
 end
 println(io, "\\end{tabular}")
 println(io, "\\end{ruledtabular}")
-write(joinpath(OUTDIR, "table2_tau_comparison_v7.tex"), String(take!(io)))
-println("wrote table2_tau_comparison_v7.tex to ", OUTDIR)
+write(joinpath(OUTDIR, "table2_tau_comparison$(KCSUF).tex"), String(take!(io)))
+println("wrote table2_tau_comparison$(KCSUF).tex to ", OUTDIR)

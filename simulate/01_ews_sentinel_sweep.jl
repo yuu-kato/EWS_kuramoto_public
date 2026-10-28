@@ -7,15 +7,19 @@
 # EWS sweep that follows it in the same job.
 #
 # For each (network, frequency realization) pair, in one job:
-#   stage A : chain an up-sweep K0=0.01 -> Kmax=5.0 (step 0.01) over
+#   stage A : chain an up-sweep K0=0.01 -> Kmax=3.0 (step 0.01; `Kmax_of`) over
 #     NRUN_PER_FREQ=10 independent Euler-Maruyama noise realizations,
-#     tracking only <R>_t(K) -- no variance of any kind. Kc20 is the first K
-#     at which the run-averaged <R>_t(K) has covered 20% of the way from its
-#     floor R_0 to full synchronization (R=1) (core/kuramoto_core.jl's
-#     `Kc_threshold` with frac=0.2). Kc20 is the sole K_c anchor used
-#     throughout the rest of the pipeline.
-#   stage B : anchored to that realization's own Kc20, chain a
-#     narrower up-sweep K0=0.01 -> 2*Kc20 for the same 10 noise realizations,
+#     tracking only <R>_t(K) -- no variance of any kind. K_c is the first K
+#     at which the run-averaged <R>_t(K) has covered a fraction FRAC of the
+#     way from its floor R_0 to full synchronization (R=1)
+#     (core/kuramoto_core.jl's `Kc_threshold`). FRAC is the optional first
+#     command-line argument (default 0.2, the paper's Kc20); 0.1 and 0.3
+#     (Kc10, Kc30) are run as robustness checks of the K_c definition. The
+#     resulting K_c is the sole anchor used throughout the rest of the
+#     pipeline. The job errors out if any realization's K_c is not reached
+#     before Kmax.
+#   stage B : anchored to that realization's own K_c, chain a narrower
+#     up-sweep K0=0.01 -> 2*K_c for 10 further noise realizations,
 #     computing every EWS for all six of the paper's sentinel sets together,
 #     from the very same simulated trajectories:
 #       S1  all N nodes (full observation)
@@ -76,11 +80,15 @@
 # narrow-sweep simulations sequentially.
 #
 # Run:
-#   julia --project=. -t auto simulate/01_ews_sentinel_sweep.jl
+#   julia --project=. -t 8 simulate/01_ews_sentinel_sweep.jl        # FRAC = 0.2 
+#   julia --project=. -t 8 simulate/01_ews_sentinel_sweep.jl 0.1    # Kc10 robustness check
+#   julia --project=. -t 8 simulate/01_ews_sentinel_sweep.jl 0.3    # Kc30 robustness check
 #
-# Writes under cache/:
+# Writes under cache/ (names tagged by KCTAG = Kc10/Kc20/Kc30; for the paper's
+# FRAC=0.2 the names below are unchanged, other fractions append _Kc10/_Kc30
+# to kc_summary and use bundle_ews_Kc10*/bundle_ews_Kc30*):
 #   kc_summary.tsv            one row per network: N, E, <k>, mean/sd
-#                              of Kc20 over the 10 realizations (consumed by
+#                              of K_c over the 10 realizations (consumed by
 #                              tables/table1_networks_and_Kc.jl).
 #   bundle_ews_Kc20.jls (mult=1) and bundle_ews_Kc20_mult2.jls (mult=2):
 #     `meta` (per-network, realization- and mult-independent: name/label/key/N/E/k),
@@ -108,13 +116,16 @@ for the S2-1/S2-2 and S3-1/S3-2 signal-dependent-selection explanation."
 const SET_LABELS = ["S1", "S2-1", "S2-2", "S3-1", "S3-2", "S4", "S5", "S6"]
 const NSETPERMULT = length(SET_LABELS)   # 8
 const MULTS = [1, 2]
+const FRAC  = length(ARGS) >= 1 ? parse(Float64, ARGS[1]) : 0.2   # K_c threshold fraction; 0.2 is the paper's
+const KCTAG = "Kc" * string(round(Int, 100 * FRAC))               # "Kc10", "Kc20", "Kc30"
+const KCSUF = KCTAG == "Kc20" ? "" : "_" * KCTAG                  # keeps kc_summary.tsv unchanged for 0.2
 
 "Sweep range for the K_c-determination grid, same for all networks."
-Kmax_of(kind) = 5.0
+Kmax_of(kind) = 3.0
 
-outfile(mult) = joinpath(CACHE, mult == 1 ? "bundle_ews_Kc20.jls" : "bundle_ews_Kc20_mult$(mult).jls")
+outfile(mult) = joinpath(CACHE, mult == 1 ? "bundle_ews_$(KCTAG).jls" : "bundle_ews_$(KCTAG)_mult$(mult).jls")
 
-println("Threads = ", Threads.nthreads(), "; anchor = Kc20; sentinel mults = ", MULTS,
+println("Threads = ", Threads.nthreads(), "; anchor = ", KCTAG, "; sentinel mults = ", MULTS,
     "; networks = ", length(REGISTRY), "; freq realizations = ", NFREQ, "; runs/realization = ", NRUN_PER_FREQ)
 
 "Degree vector for `topo`. Complete graph's adjacency is not stored (all
@@ -183,9 +194,9 @@ for (i, topo) in enumerate(topos)
 end
 
 # ----- main loop: one job per (network, frequency realization); builds its NetCase
-# once, determines that realization's own Kc20 (stage A), then computes every EWS
+# once, determines that realization's own Kc (stage A), then computes every EWS
 # anchored to it (stage B) -----
-Kc20_all = [Vector{Float64}(undef, NFREQ) for _ in topos]
+Kc_all = [Vector{Float64}(undef, NFREQ) for _ in topos]
 realization_meta = [Vector{NamedTuple}(undef, NFREQ) for _ in topos]
 results_allfreq_by_mult = Dict(mult => [Vector{Vector{Any}}(undef, NFREQ) for _ in topos] for mult in MULTS)
 for mult in MULTS, i in eachindex(topos), r in 1:NFREQ
@@ -199,15 +210,16 @@ Threads.@threads for j in 1:length(jobs)
     topo = topos[i]
     net = realize(topo, r)   # built once, shared by stage A and stage B below
 
-    # ---- stage A: wide up-sweep for this realization's own Kc20 (was 01) ----
+    # ---- stage A: wide up-sweep for this realization's own Kc (was 01) ----
     Kgrid_wide = collect(0.01:0.01:Kmax_of(kinds[i]))
     Rmean_wide = Matrix{Float64}(undef, length(Kgrid_wide), NRUN_PER_FREQ)
     for run in 1:NRUN_PER_FREQ
         seed = 20260806_100 + 1000 * run + 37 * r + i
         @views Rmean_wide[:, run] .= sweep_global(net, Kgrid_wide, P; seed = seed)
     end
-    Kc_r = Kc_threshold(vec(mean(Rmean_wide; dims = 2)), Kgrid_wide, 0.2)
-    Kc20_all[i][r] = Kc_r
+    Kc_r = Kc_threshold(vec(mean(Rmean_wide; dims = 2)), Kgrid_wide, FRAC)
+    Kc_r < Kmax_of(kinds[i]) - 1e-9 || error("Kc never crossed for ", labels[i], " realization ", r, "; raise Kmax_of")
+    Kc_all[i][r] = Kc_r
 
     Kc_snap = snap_to_grid(Kc_r)
     Ks05_r  = snap_to_grid(0.5 * Kc_snap)
@@ -219,9 +231,10 @@ Threads.@threads for j in 1:length(jobs)
     Kgrid = collect(0.01:0.01:Kmax_r)
     sel_rng = MersenneTwister(20260806_500 + 37 * r + i)
     for run in 1:NRUN_PER_FREQ
-        seed = 20260806_000 + 1000 * run + 37 * r + i
+        seed_sel = 20260806_600 + 1000 * run + 37 * r + i   # pass1: ranking trajectory for S2/S3 only
+        seed     = 20260806_000 + 1000 * run + 37 * r + i   # pass2: evaluation trajectory (unchanged)
 
-        vd05, ci05, vd09, ci09 = pass1(net, Ks05_r, K09_r, Kgrid, seed)
+        vd05, ci05, vd09, ci09 = pass1(net, Ks05_r, K09_r, Kgrid, seed_sel)
 
         all_sets = Vector{Vector{Int}}()
         for (mi, mult) in enumerate(MULTS)
@@ -252,25 +265,25 @@ end
 @printf("%d networks x %d freq realizations x %d runs done in %.1f s\n",
     length(topos), NFREQ, NRUN_PER_FREQ, time() - t0)
 
-# ----- Kc20 summary -----
+# ----- Kc summary -----
 summary_rows = Vector{NamedTuple}(undef, length(topos))
 for (i, topo) in enumerate(topos)
-    Kc20 = Kc20_all[i]
+    Kc = Kc_all[i]
     summary_rows[i] = (; key = keys_[i], label = labels[i], kind = kinds[i], N = topo.nnodes, E = topo.nedges,
                          kbar = topo.mean_degree,
-                         Kc20_mean = mean(Kc20), Kc20_sd = std(Kc20))
-    @printf("%-16s N=%4d E=%6d <k>=%7.2f  Kc20=%.3f(%.3f) range %.2f..%.2f\n",
-        labels[i], topo.nnodes, topo.nedges, topo.mean_degree, mean(Kc20), std(Kc20), minimum(Kc20), maximum(Kc20))
+                         Kc_mean = mean(Kc), Kc_sd = std(Kc))
+    @printf("%-16s N=%4d E=%6d <k>=%7.2f  %s=%.3f(%.3f) range %.2f..%.2f\n",
+        labels[i], topo.nnodes, topo.nedges, topo.mean_degree, KCTAG, mean(Kc), std(Kc), minimum(Kc), maximum(Kc))
 end
 
-open(joinpath(CACHE, "kc_summary.tsv"), "w") do io
-    println(io, "key\tlabel\tkind\tN\tE\tkbar\tKc20_mean\tKc20_sd")
+open(joinpath(CACHE, "kc_summary$(KCSUF).tsv"), "w") do io
+    println(io, "key\tlabel\tkind\tN\tE\tkbar\tKc_mean\tKc_sd")
     for s in summary_rows
         @printf(io, "%s\t%s\t%s\t%d\t%d\t%.4f\t%.4f\t%.4f\n",
-            s.key, s.label, s.kind, s.N, s.E, s.kbar, s.Kc20_mean, s.Kc20_sd)
+            s.key, s.label, s.kind, s.N, s.E, s.kbar, s.Kc_mean, s.Kc_sd)
     end
 end
-println("wrote kc_summary.tsv to ", CACHE)
+println("wrote kc_summary$(KCSUF).tsv to ", CACHE)
 
 # ----- EWS/sentinel bundles -----
 for mult in MULTS
@@ -286,7 +299,7 @@ for mult in MULTS
     end
 
     serialize(outfile(mult),
-        (; kc_mode = "Kc20", params = P, nfreq = NFREQ, nruns = NRUN_PER_FREQ, mult = mult, set_labels = SET_LABELS,
+        (; kc_mode = KCTAG, params = P, nfreq = NFREQ, nruns = NRUN_PER_FREQ, mult = mult, set_labels = SET_LABELS,
            net_order = [n.name for n in topos], meta = meta, realization_meta = realization_meta,
            results_allfreq = results_allfreq))
     println("saved ", basename(outfile(mult)), " to ", CACHE)

@@ -131,5 +131,5 @@ for col in 1:length(COLUMNS)
 end
 colgap!(fig.layout, 60)
 
-save(joinpath(OUTDIR, "ews_sentinel_appendix.pdf"), fig)
-println("wrote ews_sentinel_appendix.pdf to ", OUTDIR)
+save(joinpath(OUTDIR, "ews_sentinel_appendix_rev.pdf"), fig)
+println("wrote ews_sentinel_appendix_rev.pdf to ", OUTDIR)

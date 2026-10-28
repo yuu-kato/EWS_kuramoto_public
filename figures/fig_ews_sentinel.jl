@@ -151,5 +151,5 @@ end
 colgap!(fig.layout, 50)
 rowgap!(fig.layout, 30)
 
-save(joinpath(OUTDIR, "ews_sentinel.pdf"), fig)
-println("wrote ews_sentinel.pdf to ", OUTDIR)
+save(joinpath(OUTDIR, "ews_sentinel_rev.pdf"), fig)
+println("wrote ews_sentinel_rev.pdf to ", OUTDIR)
