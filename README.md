@@ -20,7 +20,7 @@ The critical coupling strength $K_\mathrm{c}$ is the first $K$ at which the norm
 | `Kc30` | 0.3 | `_Kc30` |
 
 ### Simulation
-| File | Arguments | Description | Results (stored in `cache/`)|
+| File | Arguments | Description | Results |
 | :--- | :--- | :--- | :--- |
 | `core/kuramoto_core.jl` | | Core functions | |
 | `simulate/`<br>`01_ews_sentinel_sweep.jl` | `[frac]` (default `0.2`) | Determine critical coupling $K_\mathrm{c}$ with threshold fraction `frac`. <br> Calculate EWSs for $n = \lfloor \ln N \rfloor$. <br> Calculate EWSs for $n = 2\lfloor \ln N \rfloor$. | `kc_summary[_Kc10\|_Kc30].tsv` <br> `bundle_ews_<tag>.jls` <br> `bundle_ews_<tag>_mult2.jls` |
